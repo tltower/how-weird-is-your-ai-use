@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A private profile of how your coding-agent usage differs from Anthropic's published AI-use distributions." />
+    <title>How Weird Is Your AI Use?</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <main>
+      <header class="masthead">
+        <h1>HOW WEIRD IS<br />YOUR AI USE?</h1>
+        <div class="lede-block">
+          <div class="source-switch" role="group" aria-label="Session source">
+            <span>SESSION SOURCE</span>
+            <button class="active" data-source="codex" type="button">CODEX</button>
+            <button data-source="claude" type="button">CLAUDE CODE</button>
+          </div>
+          <p class="lede" id="platform-lede">Your Codex task history, projected onto Anthropic’s published taxonomy.</p>
+          <button class="text-button" id="refresh-tasks" type="button">REFRESH TASK INDEX</button>
+        </div>
+      </header>
+
+      <section class="readiness" aria-label="Analysis readiness">
+        <div class="readiness-copy">
+          <span class="label">LOCAL SESSIONS</span>
+          <strong id="indexed-tasks">—</strong>
+        </div>
+        <div class="readiness-copy">
+          <span class="label">RECENT COHORT</span>
+          <strong id="cohort-tasks">—</strong>
+        </div>
+        <div class="readiness-copy">
+          <span class="label">WITH CONTEXT</span>
+          <strong id="enriched-tasks">—</strong>
+        </div>
+        <div class="readiness-copy">
+          <span class="label">CLASSIFIED</span>
+          <strong id="classified-tasks">—</strong>
+        </div>
+      </section>
+
+      <section class="job-panel hidden" id="job-panel" aria-live="polite">
+        <div>
+          <span class="section-number" id="job-platform">LIVE LOCAL RUN</span>
+          <strong id="job-phase">Preparing coordinator</strong>
+        </div>
+        <div class="job-progress"><span id="job-progress-bar"></span></div>
+        <p id="job-message">Run files prepared.</p>
+        <button class="danger-button hidden" id="cancel-run" type="button">STOP</button>
+      </section>
+
+      <section class="comparison-panel" id="results" aria-label="AI use distribution comparison">
+        <div class="panel-heading">
+          <div>
+            <div class="section-number">01 / DISTRIBUTION</div>
+            <h3>Your tasks compared with the baseline</h3>
+          </div>
+          <div class="comparison-actions">
+            <div class="toggle" role="group" aria-label="Taxonomy baseline">
+              <button class="active" data-taxonomy="coding" type="button">CLAUDE CODE</button>
+              <button data-taxonomy="general" type="button">MIXED USE</button>
+            </div>
+            <button class="run-button hidden" id="run-recent" type="button">ANALYZE UNCLASSIFIED</button>
+          </div>
+        </div>
+
+        <div class="uniqueness-strip">
+          <div class="uniqueness-score">
+            <span>DISTRIBUTIONAL UNIQUENESS</span>
+            <strong><b id="uniqueness-score">—</b><small>/ 100</small></strong>
+          </div>
+          <p id="uniqueness-copy">A 0 means your category mix matches the baseline; 100 means the two distributions do not overlap.</p>
+        </div>
+
+        <p class="panel-note" id="taxonomy-note">Your category frequencies compared directly with the reference distribution.</p>
+        <div class="histogram-key">
+          <span id="category-count">ALL CATEGORIES</span>
+          <span><i class="you-key"></i>YOU</span>
+          <span><i class="baseline-key"></i>BASELINE</span>
+        </div>
+        <div class="histogram-shell">
+          <div class="histogram-axis" id="histogram-axis" aria-hidden="true"></div>
+          <div class="histogram-scroll" id="histogram-scroll" tabindex="0" aria-label="Category frequency histogram with your usage overlaid on the baseline.">
+            <div class="category-histogram empty-state" id="distribution-histogram"><span>No classifications yet.</span></div>
+          </div>
+        </div>
+        <div class="category-detail" id="category-detail" aria-live="polite"></div>
+        <div class="category-search-heading">
+          <label for="category-search">CATEGORY SEARCH</label>
+          <span id="category-search-count">USED CATEGORIES</span>
+        </div>
+        <div class="category-search-control">
+          <input id="category-search" type="search" autocomplete="off" placeholder="Search task categories…" />
+          <button id="clear-category-search" class="hidden" type="button">CLEAR</button>
+        </div>
+        <div class="category-search-results" id="category-search-results" aria-live="polite"></div>
+      </section>
+
+      <section class="rubric-panel">
+        <div class="panel-heading">
+          <div>
+            <div class="section-number">02 / COLLABORATION RUBRICS</div>
+            <h3>How you work with the model</h3>
+          </div>
+          <div class="toggle rubric-toggle" role="group" aria-label="Rubric">
+            <button class="active" data-rubric="task_criticality" type="button">CRITICALITY</button>
+            <button data-rubric="human_agency_level" type="button">AGENCY</button>
+            <button data-rubric="engagement_with_output" type="button">ENGAGEMENT</button>
+            <button data-rubric="friction_occurrence" type="button">FRICTION</button>
+          </div>
+        </div>
+        <p class="panel-note" id="rubric-note">Closed Stanford categories; unknown and not-applicable judgments remain visible.</p>
+        <div class="distribution-chart empty-state" id="rubric-chart"><span>No classifications yet.</span></div>
+      </section>
+
+      <section class="audit-panel">
+        <div class="panel-heading">
+          <div class="section-number">03 / DATA</div>
+          <span class="coverage-chip" id="evidence-coverage">0 RECORDS</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>TASK</th><th>TASK CLUSTER</th><th>CRITICALITY</th><th>AGENCY</th><th>EVIDENCE</th><th>CONF.</th></tr></thead>
+            <tbody id="audit-table"><tr><td colspan="6" class="empty-cell">Classified tasks will appear here.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer>
+        <p id="platform-footer">Rolling cohort: <span id="footer-cohort-size">—</span> most recently updated top-level <span id="footer-source-label">Codex</span> sessions. Taxonomies: Stanford <code>request</code> (185 clusters) and METR <code>task_description</code> (277 clusters).</p>
+        <p>Titles and summaries are lossy. Behavioral rubrics use explicit unknown/not-applicable states when the record cannot support a judgment.</p>
+      </footer>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+name: Package desktop app
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run package -- --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-use-profile-${{ runner.os }}
+          path: dist/

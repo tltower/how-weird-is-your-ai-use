@@ -1,0 +1,58 @@
+{
+  "name": "ai-use-profile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "desktop/main.mjs",
+  "description": "Private desktop profiling for Codex and Claude Code sessions against Anthropic's published AI-use taxonomies.",
+  "scripts": {
+    "dev": "node server/index.mjs",
+    "start": "node server/index.mjs",
+    "desktop": "electron .",
+    "package": "electron-builder",
+    "prepare:reference": "node scripts/prepare-reference.mjs",
+    "import:tasks": "node scripts/import-codex-tasks.mjs",
+    "import:claude": "node scripts/import-codex-tasks.mjs --source claude",
+    "import:tasks:local": "node scripts/import-codex-tasks.mjs --local-only",
+    "validate:run": "node scripts/validate-run.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.7"
+  },
+  "build": {
+    "appId": "dev.tatetower.ai-use-profile",
+    "productName": "How Weird Is Your AI Use",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/**",
+      "public/**",
+      "server/**",
+      "scripts/**",
+      "data/**",
+      "docs/**",
+      ".codex/**",
+      ".claude/**",
+      "AGENTS.md",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "category": "Development",
+      "target": "AppImage"
+    }
+  }
+}
