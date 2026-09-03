@@ -137,7 +137,7 @@ function renderCategorySearch() {
   const matches = query
     ? categories.filter((category) => `${category.name} ${category.description}`.toLocaleLowerCase().includes(query))
     : categories.filter((category) => category.count > 0);
-  const visible = matches.slice(0, query ? 60 : 12);
+  const visible = matches.slice(0, 2);
   $("#clear-category-search").classList.toggle("hidden", !query);
   $("#category-search-count").textContent = query
     ? `${matches.length} ${matches.length === 1 ? "MATCH" : "MATCHES"}`
