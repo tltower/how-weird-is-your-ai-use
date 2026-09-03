@@ -1,7 +1,6 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 let state = null;
-let activeSource = localStorage.getItem("ai-use-profile-source") === "claude" ? "claude" : "codex";
 let activeTaxonomy = "coding";
 let activeRubric = "task_criticality";
 let pollTimer = null;
@@ -41,12 +40,11 @@ function renderReadiness() {
 }
 
 function renderPlatform() {
-  const isClaude = activeSource === "claude";
+  const isClaude = state.source === "claude";
   const sourceName = isClaude ? "Claude Code" : "Codex";
   $("#platform-lede").textContent = `${sourceName} session history, projected onto Anthropic’s published taxonomy.`;
   $("#footer-source-label").textContent = sourceName;
   $("#job-platform").textContent = `LIVE ${state?.activeJob?.agentProviderLabel?.toUpperCase() || sourceName.toUpperCase()} RUN`;
-  $$('[data-source]').forEach((button) => button.classList.toggle("active", button.dataset.source === activeSource));
 }
 
 function renderSummary() {
@@ -275,8 +273,7 @@ function render() {
 
 async function boot() {
   try {
-    state = await request(`/api/bootstrap?source=${encodeURIComponent(activeSource)}`);
-    activeSource = state.source;
+    state = await request("/api/bootstrap");
     render();
     if (state.activeJob) beginPolling();
   } catch (error) {
@@ -287,7 +284,7 @@ async function boot() {
 
 async function startRun(limit) {
   try {
-    const result = await request("/api/analyze", { method: "POST", body: JSON.stringify({ limit, source: activeSource }) });
+    const result = await request("/api/analyze", { method: "POST", body: JSON.stringify({ limit }) });
     state.activeJob = result.job;
     renderJob(result.job);
     beginPolling();
@@ -320,20 +317,10 @@ $("#refresh-tasks").addEventListener("click", async () => {
   const button = $("#refresh-tasks");
   button.disabled = true;
   button.textContent = "REFRESHING…";
-  try { await request("/api/tasks/refresh", { method: "POST", body: JSON.stringify({ source: activeSource }) }); await boot(); }
+  try { await request("/api/tasks/refresh", { method: "POST", body: "{}" }); await boot(); }
   catch (error) { $("#taxonomy-note").textContent = error.message; }
   finally { button.disabled = false; button.textContent = "REFRESH TASK INDEX"; }
 });
-
-$$('[data-source]').forEach((button) => button.addEventListener("click", async () => {
-  if (button.dataset.source === activeSource) return;
-  activeSource = button.dataset.source;
-  localStorage.setItem("ai-use-profile-source", activeSource);
-  $$('[data-source]').forEach((candidate) => { candidate.disabled = true; });
-  $("#category-search").value = "";
-  try { await boot(); }
-  finally { $$('[data-source]').forEach((candidate) => { candidate.disabled = false; }); }
-}));
 
 $("#category-search").addEventListener("input", renderCategorySearch);
 $("#clear-category-search").addEventListener("click", () => {

@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import { AnalysisRunner } from "./analysis-runner.mjs";
 import { chooseAgentProvider, detectAgentProviders } from "./agent-providers.mjs";
 import { computeProfile } from "./metrics.mjs";
-import { normalizeSource, sourceLabel } from "./runtime-paths.mjs";
+import { resolveIntegrationSource, sourceArgument } from "./integration-source.mjs";
+import { sourceLabel } from "./runtime-paths.mjs";
 import { importTasks, loadTasks, scopeRecentTasks } from "./tasks.mjs";
 
 const MODULE_PATH = fileURLToPath(import.meta.url);
@@ -57,21 +58,28 @@ export async function startAppServer({
   publicDir = DEFAULT_PUBLIC_DIR,
   port = DEFAULT_PORT,
   host = "127.0.0.1",
+  source = null,
 } = {}) {
   const runner = new AnalysisRunner(projectRoot);
+  const agentProviders = await detectAgentProviders();
+  const sourceSelection = await resolveIntegrationSource({
+    requestedSource: source,
+    agentProviders,
+  });
+  const integrationSource = sourceSelection.source;
 
-  async function bootstrap(source) {
-    const normalizedSource = normalizeSource(source);
-    const allTasks = await loadTasks(projectRoot, normalizedSource);
+  async function bootstrap() {
+    const allTasks = await loadTasks(projectRoot, integrationSource);
     const tasks = scopeRecentTasks(allTasks, RECENT_COHORT_SIZE);
-    const profile = await computeProfile(projectRoot, tasks, normalizedSource);
-    const agentProviders = await detectAgentProviders();
-    const agentProvider = chooseAgentProvider(normalizedSource, agentProviders);
+    const profile = await computeProfile(projectRoot, tasks, integrationSource);
+    const currentAgentProviders = await detectAgentProviders();
+    const agentProvider = chooseAgentProvider(integrationSource, currentAgentProviders);
     return {
       status: "ready",
-      source: normalizedSource,
-      sourceLabel: sourceLabel(normalizedSource),
-      agentProviders,
+      source: integrationSource,
+      sourceLabel: sourceLabel(integrationSource),
+      sourceSelection,
+      agentProviders: currentAgentProviders,
       agentProvider,
       agentProviderLabel: sourceLabel(agentProvider),
       taskImport: taskImportView(allTasks, tasks),
@@ -106,30 +114,33 @@ export async function startAppServer({
     const requestUrl = new URL(request.url, "http://localhost");
     try {
       if (request.method === "GET" && requestUrl.pathname === "/api/bootstrap") {
-        sendJson(response, 200, await bootstrap(requestUrl.searchParams.get("source")));
+        sendJson(response, 200, await bootstrap());
         return;
       }
       if (request.method === "POST" && requestUrl.pathname === "/api/tasks/refresh") {
-        const body = await readJsonBody(request);
-        const source = normalizeSource(body.source);
-        const allTasks = await importTasks({ projectRoot, source, useAppServer: source === "codex" });
+        await readJsonBody(request);
+        const allTasks = await importTasks({
+          projectRoot,
+          source: integrationSource,
+          useAppServer: integrationSource === "codex",
+        });
         const tasks = scopeRecentTasks(allTasks, RECENT_COHORT_SIZE);
-        sendJson(response, 200, { source, taskImport: taskImportView(allTasks, tasks) });
+        sendJson(response, 200, {
+          source: integrationSource,
+          taskImport: taskImportView(allTasks, tasks),
+        });
         return;
       }
       if (request.method === "POST" && requestUrl.pathname === "/api/analyze") {
         const body = await readJsonBody(request);
-        const source = normalizeSource(body.source);
         const agentProviders = await detectAgentProviders();
-        const agentProvider = body.agentProvider
-          ? normalizeSource(body.agentProvider)
-          : chooseAgentProvider(source, agentProviders);
+        const agentProvider = chooseAgentProvider(integrationSource, agentProviders);
         if (!agentProviders[agentProvider]) {
           throw new Error(`No signed-in local ${sourceLabel(agentProvider)} CLI was found.`);
         }
-        const tasks = scopeRecentTasks(await loadTasks(projectRoot, source), RECENT_COHORT_SIZE);
+        const tasks = scopeRecentTasks(await loadTasks(projectRoot, integrationSource), RECENT_COHORT_SIZE);
         const job = await runner.createJob(tasks, {
-          source,
+          source: integrationSource,
           agentProvider,
           limit: body.limit ?? 12,
           taskIds: body.taskIds ?? null,
@@ -167,6 +178,6 @@ export async function startAppServer({
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === MODULE_PATH) {
-  const instance = await startAppServer();
+  const instance = await startAppServer({ source: sourceArgument() });
   console.log(`AI Use Profile ready at ${instance.url}`);
 }

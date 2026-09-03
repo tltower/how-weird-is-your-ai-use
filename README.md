@@ -39,12 +39,17 @@ npm run package
 
 The manual **Package desktop app** GitHub Actions workflow builds macOS, Windows, and Linux artifacts.
 
-## How source and classifier selection work
+## How integration and classifier selection work
 
-The source switch in the app selects either Codex history or Claude Code history. By default, the app
-uses the matching local agent to classify it. If that CLI is unavailable but the other supported local
-agent is installed, it falls back to the available agent. Thus a Codex installation can profile Claude
-Code sessions and vice versa without uploading the history.
+The app configures its session source once at startup rather than exposing an in-app platform switch.
+An integration can set `AI_USE_PROFILE_SOURCE=codex` or `AI_USE_PROFILE_SOURCE=claude`, or launch the
+app with `--source codex` / `--source claude`. Without an explicit setting, the app detects a Codex or
+Claude Code launcher environment, then a sole installed local agent, then a sole available session
+history. Codex is the final fallback when both platforms are equally available.
+
+The matching local agent classifies the selected history. If that CLI is unavailable but the other
+supported local agent is installed, the app falls back to the available agent. Thus a Codex
+installation can profile Claude Code sessions and vice versa without uploading the history.
 
 Both coordinator paths use at most three classifier subagents concurrently. Codex loads
 `.codex/agents/ai_use_classifier.toml`; Claude Code loads

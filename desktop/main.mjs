@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog } from "electron";
 import { cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { startAppServer } from "../server/index.mjs";
+import { sourceArgument } from "../server/integration-source.mjs";
 
 let service = null;
 let quitting = false;
@@ -26,6 +27,7 @@ async function createWindow() {
     projectRoot: workspaceRoot,
     publicDir: path.join(appRoot, "public"),
     port: 0,
+    source: sourceArgument(),
   });
 
   const window = new BrowserWindow({

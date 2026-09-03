@@ -68,11 +68,6 @@ h1 {
 }
 
 .lede-block { align-self: end; }
-.source-switch { display: grid; grid-template-columns: auto 1fr 1fr; align-items: center; margin-bottom: 12px; border: 1px solid var(--line); }
-.source-switch > span { padding: 0 12px; color: var(--muted); font-size: 8px; letter-spacing: .1em; }
-.source-switch button { min-height: 32px; padding: 0 10px; color: #777970; border-left: 1px solid var(--line); background: transparent; font-size: 9px; }
-.source-switch button.active { color: #10110e; background: var(--cyan); }
-.source-switch button:disabled { cursor: wait; opacity: .45; }
 .text-button { min-height: 0; margin-top: 13px; padding: 0 0 3px; color: var(--cyan); border-bottom: 1px solid #3e6e9e; background: transparent; font-size: 10px; }
 .text-button:hover { border-color: var(--cyan); }
 
